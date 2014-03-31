@@ -373,6 +373,8 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
                   if (tcpHeader.GetDestinationPort () == (*i).GetGlobalPort ())
                     {
                       tcpHeader.SetDestinationPort ((*i).GetLocalPort ());
+                      NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+                      NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
                     }
                   p->AddHeader (tcpHeader);
                 }
@@ -480,6 +482,8 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
                   if (tcpHeader.GetSourcePort () == (*i).GetLocalPort ())
                     {
                       tcpHeader.SetSourcePort ((*i).GetGlobalPort ());
+                      // NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+                      // NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
                     }
                   p->AddHeader (tcpHeader);
                 }

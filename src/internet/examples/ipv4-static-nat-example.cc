@@ -31,8 +31,8 @@ NS_LOG_COMPONENT_DEFINE ("NetfilterExample");
 int
 main (int argc, char *argv[])
 {
-  LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
+  LogComponentEnable ("BulkSendApplication", LOG_LEVEL_INFO);
+  LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 
   //uint16_t port = 9;
 
@@ -82,8 +82,8 @@ main (int argc, char *argv[])
   nat->SetInside (1);
   nat->SetOutside (2);
 
-  // Add a rule here to map outbound connections from n0, port 49153, UDP
-  Ipv4StaticNatRule rule2 (Ipv4Address ("192.168.1.1"), 49153, Ipv4Address ("203.82.48.100"), 8080, IPPROTO_UDP);
+  // Add a rule here to map outbound connections from n0, port 49153, for all protocols
+  Ipv4StaticNatRule rule2 (Ipv4Address ("192.168.1.1"), 49153, Ipv4Address ("203.82.48.100"), 8080, 0);
   nat->AddStaticRule (rule2);
 
   // Now print them out
@@ -91,27 +91,38 @@ main (int argc, char *argv[])
   nat->PrintTable (natStream);
 
   // Configure applications to generate traffic
-  UdpEchoServerHelper echoServer (9);
+  uint16_t port = 10;    // well-known echo port number
 
-  // This application corresponds to the first rule
-  ApplicationContainer serverApps = echoServer.Install (second.Get (1));
-  serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (10.0));
+  //
+  // Create a PacketSinkApplication and install it as the server on n2
+  //
+  PacketSinkHelper sink ("ns3::TcpSocketFactory",
+                         InetSocketAddress (Ipv4Address::GetAny (), port));
+  ApplicationContainer sinkApps = sink.Install (second.Get (1));
+  sinkApps.Start (Seconds (1.0));
+  sinkApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (secondInterfaces.GetAddress (1), 9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.)));
-  echoClient.SetAttribute ("PacketSize", UintegerValue (512));
-
-  ApplicationContainer clientApps = echoClient.Install (first.Get (0));
-  clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (10.0));
-
+  //
+  // Create a BulkSendApplication and install it on node 0
+  //
+  BulkSendHelper source ("ns3::TcpSocketFactory",
+                         InetSocketAddress (secondInterfaces.GetAddress (1), port));
+  // Set the amount of data to send in bytes.  Zero is unlimited.
+  source.SetAttribute ("MaxBytes", UintegerValue (10000));
+  ApplicationContainer sourceApps = source.Install (first.Get (0));
+  sourceApps.Start (Seconds (2.0));
+  sourceApps.Stop (Seconds (10.0));
+  
   // Prepare to run the simulation
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   pointToPoint.EnablePcapAll ("ipv4-nat", false);
 
   Simulator::Run ();
   Simulator::Destroy ();
+
+  NS_LOG_INFO ("Simulation Done.");
+  
+  Ptr<PacketSink> sink1 = DynamicCast<PacketSink> (sinkApps.Get (0));
+  std::cout << "Total Bytes Received: " << sink1->GetTotalRx () << std::endl;
   return 0;
 }
