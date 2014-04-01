@@ -37,7 +37,8 @@ main (int argc, char *argv[])
   //uint16_t port = 9;
 
   // Desired topology:  n0 <----> n1 <-----> n2
-  // n0 and n1 in first container, n1 and n2 in second
+  //                    n3 <----> 
+  // n0 and n1 in first container, n1 and n2 in second, n1 and n3 in third
 
   NodeContainer first;
   first.Create (2);
@@ -45,6 +46,10 @@ main (int argc, char *argv[])
   NodeContainer second;
   second.Add ( first.Get (1) );
   second.Create (1);
+
+  NodeContainer third;
+  third.Create(1);
+  third.Add ( first.Get(1) );
 
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
@@ -56,9 +61,13 @@ main (int argc, char *argv[])
   NetDeviceContainer devices2;
   devices2 = pointToPoint.Install (second);
 
+  NetDeviceContainer devices3;
+  devices3 = pointToPoint.Install (third);
+
   InternetStackHelper stack;
   stack.Install (first);
   stack.Install (second.Get (1));
+  stack.Install (third.Get (0));
 
   //        private address    NAT      public address
   // n0 <--------------------> n1 <-----------------------> n2
@@ -69,8 +78,12 @@ main (int argc, char *argv[])
   Ipv4AddressHelper address2;
   address2.SetBase ("203.82.48.0", "255.255.255.0");
 
+  Ipv4AddressHelper address3;
+  address3.SetBase ("192.168.2.0", "255.255.255.0");
+
   Ipv4InterfaceContainer firstInterfaces = address1.Assign (devices1);
   Ipv4InterfaceContainer secondInterfaces = address2.Assign (devices2);
+  Ipv4InterfaceContainer thirdInterfaces = address3.Assign (devices3);
 
   Ipv4NatHelper natHelper;
   // The zeroth element of the second node container is the NAT node
@@ -81,10 +94,16 @@ main (int argc, char *argv[])
   // facing n2 is numbered "2" (since it was assigned in the second step above)
   nat->SetInside (1);
   nat->SetOutside (2);
+  nat->SetInside (3);
 
   // Add a rule here to map outbound connections from n0, port 49153, for all protocols
-  Ipv4StaticNatRule rule2 (Ipv4Address ("192.168.1.1"), 49153, Ipv4Address ("203.82.48.100"), 8080, 0);
-  nat->AddStaticRule (rule2);
+  // Ipv4StaticNatRule rule1 (Ipv4Address ("192.168.1.1"), 49153, Ipv4Address ("203.82.48.100"), 8081, 0);
+  // Ipv4StaticNatRule rule3 (Ipv4Address ("192.168.2.1"), 49153, Ipv4Address ("203.82.48.100"), 8083, 0);
+  Ipv4StaticNatRule rule1 (Ipv4Address ("192.168.1.1"), Ipv4Address ("203.82.48.101"));
+  Ipv4StaticNatRule rule3 (Ipv4Address ("192.168.2.1"), Ipv4Address ("203.82.48.103"));
+
+  nat->AddStaticRule (rule1);
+  nat->AddStaticRule (rule3);
 
   // Now print them out
   Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
@@ -105,14 +124,25 @@ main (int argc, char *argv[])
   //
   // Create a BulkSendApplication and install it on node 0
   //
-  BulkSendHelper source ("ns3::TcpSocketFactory",
+  BulkSendHelper source1 ("ns3::TcpSocketFactory",
                          InetSocketAddress (secondInterfaces.GetAddress (1), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
-  source.SetAttribute ("MaxBytes", UintegerValue (10000));
-  ApplicationContainer sourceApps = source.Install (first.Get (0));
-  sourceApps.Start (Seconds (2.0));
-  sourceApps.Stop (Seconds (10.0));
-  
+  source1.SetAttribute ("MaxBytes", UintegerValue (10000));
+  ApplicationContainer sourceApps1 = source1.Install (first.Get (0));
+  sourceApps1.Start (Seconds (2.0));
+  sourceApps1.Stop (Seconds (10.0));
+ 
+  //
+  // Create a BulkSendApplication and install it on node 3
+  //
+  BulkSendHelper source3 ("ns3::TcpSocketFactory",
+                         InetSocketAddress (secondInterfaces.GetAddress (1), port));
+  // Set the amount of data to send in bytes.  Zero is unlimited.
+  source3.SetAttribute ("MaxBytes", UintegerValue (10000));
+  ApplicationContainer sourceApps3 = source3.Install (third.Get (1));
+  sourceApps3.Start (Seconds (2.0));
+  sourceApps3.Stop (Seconds (10.0));
+
   // Prepare to run the simulation
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   pointToPoint.EnablePcapAll ("ipv4-nat", false);

@@ -1,3 +1,4 @@
        Static Nat Rules
 Local IP     Local Port     Global IP    Global Port 
-192.168.1.1     49153           203.82.48.100   8080            
+192.168.2.1                        203.82.48.103   
+192.168.1.1                        203.82.48.101   
