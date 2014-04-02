@@ -356,6 +356,26 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
           if ((*i).GetGlobalPort () == 0)
             {
               NS_LOG_DEBUG ("Rule match with a non-port-specific rule");
+
+              // ---------------------------
+              // My Modifications:
+              // ---------------------------
+              if (ipHeader.GetProtocol () == IPPROTO_TCP)
+                {
+                  TcpHeader tcpHeader;
+                  p->RemoveHeader (tcpHeader);
+                  NS_LOG_INFO("Start of translator functions");
+                  NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+                  NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
+                  // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
+                  if ((tcpHeader.GetFlags() & TcpHeader::SYN) && ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
+                    NS_LOG_INFO("Hello World");
+                  p->AddHeader (tcpHeader);
+                }
+              // ---------------------------
+              // End My Modifications:
+              // ---------------------------
+              
               ipHeader.SetDestination ((*i).GetLocalIp ());
               p->AddHeader (ipHeader);
               return 0;
@@ -373,8 +393,6 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
                   if (tcpHeader.GetDestinationPort () == (*i).GetGlobalPort ())
                     {
                       tcpHeader.SetDestinationPort ((*i).GetLocalPort ());
-                      NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
-                      NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
                     }
                   p->AddHeader (tcpHeader);
                 }
@@ -466,7 +484,38 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
           if ((*i).GetLocalPort () == 0)
             {
               NS_LOG_DEBUG ("Rule match with a non-port-specific rule");
-              ipHeader.SetSource ((*i).GetGlobalIp ());
+
+              // ---------------------------
+              // My Modifications:
+              // ---------------------------
+              bool isIpHeaderModified = false;
+              if (ipHeader.GetProtocol () == IPPROTO_TCP)
+                {
+                  TcpHeader tcpHeader;
+                  p->RemoveHeader (tcpHeader);
+                  NS_LOG_INFO("Start of translator functions");
+                  NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+                  NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
+                  // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
+                  if ((tcpHeader.GetFlags() & TcpHeader::SYN) && ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
+                    {
+                      isIpHeaderModified = true;
+                      NS_LOG_INFO("SYN flag detected from client 2 (192.168.2.1), generating ACK");
+                      NS_LOG_INFO(ipHeader.GetDestination());
+                      tcpHeader.SetFlags(tcpHeader.GetFlags() | TcpHeader::ACK);
+                      tcpHeader.SetAckNumber(tcpHeader.GetSequenceNumber() + SequenceNumber32 (1));
+                      tcpHeader.SetSourcePort(10);
+                      tcpHeader.SetDestinationPort(49153);
+                      ipHeader.SetDestination(Ipv4Address ("192.168.2.1"));
+                      ipHeader.SetSource(Ipv4Address ("203.82.48.2"));
+                    }
+                  p->AddHeader (tcpHeader);
+                }
+              // ---------------------------
+              // End My Modifications:
+              // ---------------------------
+              if (!isIpHeaderModified)
+                ipHeader.SetSource ((*i).GetGlobalIp ());
               p->AddHeader (ipHeader);
               return 0;
             }
@@ -482,8 +531,6 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
                   if (tcpHeader.GetSourcePort () == (*i).GetLocalPort ())
                     {
                       tcpHeader.SetSourcePort ((*i).GetGlobalPort ());
-                      // NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
-                      // NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
                     }
                   p->AddHeader (tcpHeader);
                 }

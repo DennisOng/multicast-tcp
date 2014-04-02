@@ -129,8 +129,8 @@ main (int argc, char *argv[])
   // Set the amount of data to send in bytes.  Zero is unlimited.
   source1.SetAttribute ("MaxBytes", UintegerValue (10000));
   ApplicationContainer sourceApps1 = source1.Install (first.Get (0));
-  sourceApps1.Start (Seconds (2.0));
-  sourceApps1.Stop (Seconds (10.0));
+  // sourceApps1.Start (Seconds (2.0));
+  // sourceApps1.Stop (Seconds (10.0));
  
   //
   // Create a BulkSendApplication and install it on node 3
@@ -139,7 +139,7 @@ main (int argc, char *argv[])
                          InetSocketAddress (secondInterfaces.GetAddress (1), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
   source3.SetAttribute ("MaxBytes", UintegerValue (10000));
-  ApplicationContainer sourceApps3 = source3.Install (third.Get (1));
+  ApplicationContainer sourceApps3 = source3.Install (third.Get (0));
   sourceApps3.Start (Seconds (2.0));
   sourceApps3.Stop (Seconds (10.0));
 
