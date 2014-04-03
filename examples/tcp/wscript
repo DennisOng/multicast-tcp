@@ -24,3 +24,7 @@ def build(bld):
     obj = bld.create_ns3_program('tcp-bulk-send',
                                  ['point-to-point', 'applications', 'internet'])
     obj.source = 'tcp-bulk-send.cc'
+
+    obj = bld.create_ns3_program('tcp-echo-example', 
+                                 ['point-to-point','applications'])
+    obj.source = 'tcp-echo-example.cc'

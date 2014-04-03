@@ -25,7 +25,9 @@
 #include "ipv6-address.h"
 #include "ns3/address.h"
 #include "mac48-address.h"
-
+#include "ns3/inet-socket-address.h"
+#include "ns3/inet6-socket-address.h"
+ 
 namespace ns3 {
 
 void WriteTo (Buffer::Iterator &i, Ipv4Address ad);
@@ -37,6 +39,45 @@ void ReadFrom (Buffer::Iterator &i, Ipv4Address &ad);
 void ReadFrom (Buffer::Iterator &i, Ipv6Address &ad);
 void ReadFrom (Buffer::Iterator &i, Address &ad, uint32_t len);
 void ReadFrom (Buffer::Iterator &i, Mac48Address &ad);
+
+// ----------------------------------------------
+// This part is added in based on the modifications by the TCP echo example patch
+// @ https://codereview.appspot.com/5654053/
+// ----------------------------------------------
+ /**
+  * \ingroup address
+  *
+  * \brief a class to help on printing formated address, Ipv4 or Ipv6
+  *
+  * The constructor takes an address as argument. It can be Ipv4 or Ipv6 and
+  * is automatically cast. This class is to help on printing formated address without
+  * caring what are the type, supressing some "if's" from source.
+  */
+class AddressPrinter {
+public:
+     explicit AddressPrinter (Address &address);
+     explicit AddressPrinter (Ipv4Address &address);
+     explicit AddressPrinter (Ipv6Address &address);
+     explicit AddressPrinter (InetSocketAddress &address);
+     explicit AddressPrinter (Inet6SocketAddress &address);
+     /**
+      * \brief Print the address formated in Ipv4 or Ipv6 format
+      *
+      * The print format depends on which address type was used on the constructor
+      * \param os The output stream to which the address is printed
+      */
+void Print (std::ostream &os) const;
+
+     Ipv4Address address;
+     Ipv6Address address6;
+     bool v6;
+};
+
+std::ostream& operator<< (std::ostream& os, AddressPrinter const& address);
+ 
+// ----------------------------------------------
+// End of modification
+// ----------------------------------------------
 
 namespace addressUtils {
 

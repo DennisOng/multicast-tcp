@@ -68,6 +68,76 @@ void ReadFrom (Buffer::Iterator &i, Mac48Address &ad)
   ad.CopyFrom (mac);
 }
 
+// ----------------------------------------------
+// This part is added in based on the modifications by the TCP echo example patch
+// @ https://codereview.appspot.com/5654053/
+// ----------------------------------------------
+
+AddressPrinter::AddressPrinter(Address &address)
+ : v6(false)
+{
+ if (Ipv4Address::IsMatchingType(address) == true)
+   {
+         this->address = Ipv4Address::ConvertFrom(address);
+   }
+ else if (Ipv6Address::IsMatchingType(address) == true)
+   {
+         address6 = Ipv6Address::ConvertFrom(address);
+         v6 = true;
+   }
+ else if (InetSocketAddress::IsMatchingType(address) == true)
+   {
+         InetSocketAddress iAddr = InetSocketAddress::ConvertFrom(address);
+         this->address = iAddr.GetIpv4();
+   }
+ else if (Inet6SocketAddress::IsMatchingType(address) == true)
+   {
+         Inet6SocketAddress i6Addr = Inet6SocketAddress::ConvertFrom(address);
+         this->address6 = i6Addr.GetIpv6();
+         v6 = true;
+   }
+}
+
+AddressPrinter::AddressPrinter (Ipv4Address &address)
+ : v6(false)
+{
+ this->address = address;
+}
+
+AddressPrinter::AddressPrinter (Ipv6Address &address)
+ : v6(true)
+{
+ address6 = address;
+}
+
+AddressPrinter::AddressPrinter (InetSocketAddress &address)
+: v6(false)
+{
+ this->address = address.GetIpv4();
+}
+
+AddressPrinter::AddressPrinter (Inet6SocketAddress &address)
+: v6(true)
+{
+ this->address6 = address.GetIpv6();
+}
+
+void
+AddressPrinter::Print (std::ostream &os) const
+{
+ v6 ? address6.Print(os) : address.Print(os);
+}
+
+std::ostream& operator<< (std::ostream& os, AddressPrinter const& address)
+{
+ address.Print (os);
+ return os;
+}
+ 
+// ----------------------------------------------
+// End of modification
+// ----------------------------------------------
+
 namespace addressUtils {
 
 bool IsMulticast (const Address &ad)
