@@ -5,16 +5,20 @@ def build(bld):
     obj.source = [
         'model/backoff.cc',
         'model/csma-net-device.cc',
+        'model/csma-net-translator.cc',  ## Self Added
         'model/csma-channel.cc',
         'helper/csma-helper.cc',
+        'helper/csma-translator-helper.cc',     ## Self Added
         ]
     headers = bld.new_task_gen(features=['ns3header'])
     headers.module = 'csma'
     headers.source = [
         'model/backoff.h',
         'model/csma-net-device.h',
+        'model/csma-net-translator.h',   ## Self Added
         'model/csma-channel.h',
         'helper/csma-helper.h',
+        'helper/csma-translator-helper.h',      ## Self Added
         ]
 
     if bld.env['ENABLE_EXAMPLES']:

@@ -11,4 +11,6 @@
 #include "csma-channel.h"
 #include "csma-helper.h"
 #include "csma-net-device.h"
+#include "csma-net-translator.h"
+#include "csma-translator-helper.h"
 #endif
