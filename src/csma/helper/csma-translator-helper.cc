@@ -42,7 +42,7 @@ namespace ns3 {
 CsmaTranslatorHelper::CsmaTranslatorHelper ()
 {
   m_queueFactory.SetTypeId ("ns3::DropTailQueue");
-  m_deviceFactory.SetTypeId ("ns3::CsmaNetDevice");
+  m_deviceFactory.SetTypeId ("ns3::CsmaNetTranslator");
   m_channelFactory.SetTypeId ("ns3::CsmaChannel");
 }
 
@@ -72,9 +72,9 @@ CsmaTranslatorHelper::Install (const NodeContainer &c, Ptr<CsmaChannel> channel)
 Ptr<NetDevice>
 CsmaTranslatorHelper::InstallPriv (Ptr<Node> node, Ptr<CsmaChannel> channel, bool isTranslatorNode) const
 {
-  Ptr<CsmaNetDevice> device = m_deviceFactory.Create<CsmaNetDevice> ();
-  if (isTranslatorNode)
-	device = m_deviceFactory.Create<CsmaNetTranslator> ();
+  Ptr<CsmaNetTranslator> device = m_deviceFactory.Create<CsmaNetTranslator> ();
+  // if (isTranslatorNode)
+	// device = m_deviceFactory.Create<CsmaNetTranslator> ();
   device->SetAddress (Mac48Address::Allocate ());
   node->AddDevice (device);
   Ptr<Queue> queue = m_queueFactory.Create<Queue> ();

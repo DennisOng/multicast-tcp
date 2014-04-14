@@ -35,6 +35,8 @@
 #include "ipv4-nat.h"
 #include "ipv4.h"
 
+#include "ns3/mac-packet-tag.h"
+
 #include <iomanip>
 
 NS_LOG_COMPONENT_DEFINE ("Ipv4Nat");
@@ -356,28 +358,67 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
           if ((*i).GetGlobalPort () == 0)
             {
               NS_LOG_DEBUG ("Rule match with a non-port-specific rule");
-
+              bool isIpHeaderModified = false;
               // ---------------------------
               // My Modifications:
               // ---------------------------
-              if (ipHeader.GetProtocol () == IPPROTO_TCP)
-                {
-                  TcpHeader tcpHeader;
-                  p->RemoveHeader (tcpHeader);
-                  NS_LOG_INFO("Start of translator functions");
-                  NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
-                  NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
-                  // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
-                  if ((tcpHeader.GetFlags() & TcpHeader::SYN) && ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
-                    NS_LOG_INFO("Hello World");
-                  p->AddHeader (tcpHeader);
-                }
+              // read the tag from the packet copy
+              // MacTag tag;
+              // tag.SetSimpleValue (0x65);
+
+              // // store the tag in the packet.
+              // p->AddPacketTag (tag);
+              // NS_LOG_UNCOND("Packet tag set");
+              // MacTag tagCopy;
+              // p->PeekPacketTag (tagCopy);
+              // NS_LOG_UNCOND("Decode tags");
+              NS_LOG_UNCOND("NAT Incoming:");
+              p->PrintPacketTags (std::cout);
+              std::cout << std::endl;
+
+              NS_LOG_UNCOND("src" << ipHeader.GetSource());
+              NS_LOG_UNCOND("dst" << ipHeader.GetDestination());
+
+              // MacTag tag;
+              // p->PeekPacketTag (tag);
+              // NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
+              // if (tag.GetSrcMac() == Mac48Address ("00:00:00:00:00:04"))
+              //   {
+              //     NS_LOG_UNCOND("IN HERE!");
+              //     NS_ASSERT(ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.1.2")));
+              //     ipHeader.SetSource(Ipv4Address ("8.8.8.103"));
+              //     isIpHeaderModified = true;
+              //   }
+
+              if (ipHeader.GetDestination().IsEqual(Ipv4Address ("8.8.8.103")))
+                ipHeader.SetDestination(Ipv4Address ("192.168.1.2"));
+              isIpHeaderModified = true;
+              // MacTag tag;
+              // p->PeekPacketTag (tag);
+              // NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
+
+
+              // if (ipHeader.GetProtocol () == IPPROTO_TCP)
+              //   {
+              //     TcpHeader tcpHeader;
+              //     p->RemoveHeader (tcpHeader);
+              //     NS_LOG_INFO("Start of translator functions");
+              //     NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+              //     NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
+              //     // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
+              //     if ((tcpHeader.GetFlags() & TcpHeader::SYN) && ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
+              //       NS_LOG_INFO("Hello World");
+              //     p->AddHeader (tcpHeader);
+              //   }
+
+
               // ---------------------------
               // End My Modifications:
               // ---------------------------
-              
-              ipHeader.SetDestination ((*i).GetLocalIp ());
+              if (!isIpHeaderModified)
+                ipHeader.SetDestination ((*i).GetLocalIp ());
               p->AddHeader (ipHeader);
+
               return 0;
             }
           else
@@ -489,39 +530,111 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
               // ---------------------------
               // My Modifications:
               // ---------------------------
-              if (ipHeader.GetProtocol () == IPPROTO_TCP)
-                {
-                  TcpHeader tcpHeader;
-                  p->RemoveHeader (tcpHeader);
-                  NS_LOG_INFO("Start of translator functions");
-                  NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
-                  NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
-                  if (ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
-                    {
-                      NS_LOG_INFO("SourcePort()");
-                      NS_LOG_INFO(tcpHeader.GetSourcePort());
+              // read the tag from the packet copy
+              // MacTag tag;
+              // tag.SetSimpleValue (0x66);
 
-                      // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
-                      if (tcpHeader.GetFlags() & TcpHeader::SYN)
-                        {
-                          isIpHeaderModified = true;
-                          NS_LOG_INFO("SYN flag detected from client 2 (192.168.2.1), generating ACK");
-                          NS_LOG_INFO(ipHeader.GetDestination());
-                          tcpHeader.SetFlags(tcpHeader.GetFlags() | TcpHeader::ACK);
-                          tcpHeader.SetAckNumber(tcpHeader.GetSequenceNumber() + SequenceNumber32 (1));
-                          tcpHeader.SetSourcePort(7);
-                          tcpHeader.SetDestinationPort(49153);
-                          ipHeader.SetDestination(Ipv4Address ("192.168.2.1"));
-                          ipHeader.SetSource(Ipv4Address ("8.8.8.2"));
-                        }
-                      else
-                        {
-                          // ipHeader.SetDestination(Ipv4Address ("127.0.0.1"));
-                          // tcpHeader.SetDestinationPort(999);
-                        }
-                    }
-                  p->AddHeader (tcpHeader);
+              // // store the tag in the packet.
+              // p->AddPacketTag (tag);
+              // NS_LOG_UNCOND("Packet tag set");
+              // MacTag tagCopy;
+              // p->PeekPacketTag (tagCopy);
+              // p->PrintPacketTags (std::cout);
+              NS_LOG_UNCOND("NAT Outgoing:");
+              p->PrintPacketTags (std::cout);
+              std::cout << std::endl;
+              
+              NS_LOG_UNCOND("src" << ipHeader.GetSource());
+              NS_LOG_UNCOND("dst" << ipHeader.GetDestination());
+
+              MacTag tag;
+              p->PeekPacketTag (tag);
+              NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
+              if (tag.GetSrcMac() == Mac48Address ("00:00:00:00:00:04"))
+                {
+                  NS_LOG_UNCOND("IN HERE!");
+                  NS_ASSERT(ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.1.2")));
+                  ipHeader.SetSource(Ipv4Address ("8.8.8.103"));
+                  isIpHeaderModified = true;
                 }
+              
+
+              // p->Print(std::cout);
+              // std::cout << std::endl;
+
+              // // To get a header from Ptr<Packet> p
+              // // first, copy the packet
+              // Ptr<Packet> q = p->Copy();
+               
+              // // use indicator to search the packet
+              // PacketMetadata::ItemIterator metadataIterator = q->BeginItem();
+              // PacketMetadata::Item item;
+              // while (metadataIterator.HasNext())
+              // {
+              //     item = metadataIterator.Next();
+              //     if (item.type == PacketMetadata::Item::PAYLOAD)
+              //       break;
+              //     // for example, if we want to have an ip header
+              //     if(item.tid.GetName() == "ns3::Ipv4Header")
+              //     {
+              //         NS_LOG_UNCOND("WIN!!!!!!");
+              //         Ipv4Header ipHeader;
+              //         q->RemoveHeader (ipHeader);
+              //         NS_LOG_UNCOND("ip src:" << ipHeader.GetSource());
+              //         NS_LOG_UNCOND("ip dst:" << ipHeader.GetDestination());
+
+              // //         // Callback constructor = item.tid.GetConstructor();
+              // //         // NS_ASSERT(!constructor.IsNull());
+               
+              // //         // // Ptr<> and DynamicCast<> won't work here as all headers are from ObjectBase, not Object
+              // //         // ObjectBase *instance = constructor();
+              // //         // NS_ASSERT(instance != 0);
+               
+              // //         // Ipv4Header *ipv4Header = dynamic_cast (instance);
+              // //         // NS_ASSERT(ipv4Header != 0);
+               
+              // //         // ipv4Header->Deserialize(item.current);
+              // //         // // you can use the ip header then ...
+               
+              // //         // // finished, clear the ip header
+              // //         // delete ipv4Header;
+              //     }
+              // }
+
+
+              // if (ipHeader.GetProtocol () == IPPROTO_TCP)
+              //   {
+              //     TcpHeader tcpHeader;
+              //     p->RemoveHeader (tcpHeader);
+              //     NS_LOG_INFO("Start of translator functions");
+              //     NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+              //     NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
+              //     if (ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.2.1")))
+              //       {
+              //         NS_LOG_INFO("SourcePort()");
+              //         NS_LOG_INFO(tcpHeader.GetSourcePort());
+
+              //         // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
+              //         if (tcpHeader.GetFlags() & TcpHeader::SYN)
+              //           {
+              //             isIpHeaderModified = true;
+              //             NS_LOG_INFO("SYN flag detected from client 2 (192.168.2.1), generating ACK");
+              //             NS_LOG_INFO(ipHeader.GetDestination());
+              //             tcpHeader.SetFlags(tcpHeader.GetFlags() | TcpHeader::ACK);
+              //             tcpHeader.SetAckNumber(tcpHeader.GetSequenceNumber() + SequenceNumber32 (1));
+              //             tcpHeader.SetSourcePort(7);
+              //             tcpHeader.SetDestinationPort(49153);
+              //             ipHeader.SetDestination(Ipv4Address ("192.168.2.1"));
+              //             ipHeader.SetSource(Ipv4Address ("8.8.8.2"));
+              //           }
+              //         else
+              //           {
+              //             // ipHeader.SetDestination(Ipv4Address ("127.0.0.1"));
+              //             // tcpHeader.SetDestinationPort(999);
+              //           }
+              //       }
+              //     p->AddHeader (tcpHeader);
+              //   }
               // ---------------------------
               // End My Modifications:
               // ---------------------------

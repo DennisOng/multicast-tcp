@@ -71,6 +71,7 @@
 #include "ipv6-static-routing.h"
 #include "ipv6.h"
 #include "loopback-net-device.h"
+#include "mac-packet-tag.h"
 #include "ndisc-cache.h"
 #include "netfilter-callback-chain.h"
 #include "netfilter-conntrack-l3-protocol.h"

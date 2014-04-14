@@ -72,6 +72,16 @@ public:
    * This is the destructor for a CsmaNetDevice.
    */
   virtual ~CsmaNetTranslator ();
+
+  /**
+   * Start sending a packet down the channel.
+   * \param packet packet to send
+   * \param dest layer 2 destination address
+   * \param protocolNumber protocol number
+   * \return true if successfull, false otherwise (drop, ...)
+   */
+  virtual bool Send (Ptr<Packet> packet, const Address& dest, 
+                     uint16_t protocolNumber);
 };
 
 } // namespace ns3

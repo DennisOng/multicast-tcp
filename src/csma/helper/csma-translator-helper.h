@@ -57,29 +57,32 @@ public:
 
   /**
    * This method creates an ns3::CsmaChannel with the attributes configured by
-   * CsmaTranslatorHelper::SetChannelAttribute.  For each Ptr<node> in the provided
+   * CsmaTranslatorHelper::SetChannelAttribute.  For each Ptr<node> (except Ptr<node>[0]) in the provided
    * container c: it creates an ns3::CsmaNetDevice (with the attributes 
    * configured by CsmaTranslatorHelper::SetDeviceAttribute); adds the device to the 
    * node; and attaches the channel to the device.
-   * Also, for each Ptr<node> in the provided
-   * container t: it creates an ns3::CsmaNetTranslator (with the attributes 
+   * Also, for Ptr<node>[0] in the provided container t,
+   * it creates an ns3::CsmaNetTranslator (with the attributes 
    * configured by CsmaTranslatorHelper::SetDeviceAttribute); adds the device to the 
    * node; and attaches the channel to the device.
    *
    * \param c The NodeContainer holding the nodes to be changed.
-   * \param t The NodeContainer holding the nodes to be changed (into translators).
    * \returns A container holding the added net devices.
    */
   NetDeviceContainer Install (const NodeContainer &c) const;
 
-   /**
-   * For each Ptr<node> in the provided container, this method creates an 
-   * ns3::CsmaNetDevice (with the attributes configured by 
-   * CsmaHelper::SetDeviceAttribute); adds the device to the node; and attaches 
-   * the provided channel to the device.
+  /**
+   * This method creates an ns3::CsmaChannel with the attributes configured by
+   * CsmaTranslatorHelper::SetChannelAttribute.  For each Ptr<node> (except Ptr<node>[0]) in the provided
+   * container c: it creates an ns3::CsmaNetDevice (with the attributes 
+   * configured by CsmaTranslatorHelper::SetDeviceAttribute); adds the device to the 
+   * node; and attaches the channel to the device.
+   * Also, for Ptr<node>[0] in the provided container t,
+   * it creates an ns3::CsmaNetTranslator (with the attributes 
+   * configured by CsmaTranslatorHelper::SetDeviceAttribute); adds the device to the 
+   * node; and attaches the provided channel to the device.
    *
    * \param c The NodeContainer holding the nodes to be changed.
-   * \param t The NodeContainer holding the nodes to be changed (into translators).
    * \param channel The channel to attach to the devices.
    * \returns A container holding the added net devices.
    */

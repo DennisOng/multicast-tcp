@@ -48,5 +48,15 @@ CsmaNetTranslator::~CsmaNetTranslator()
   NS_LOG_FUNCTION_NOARGS ();
 }
 
+bool
+CsmaNetTranslator::Send (Ptr<Packet> packet,const Address& dest, uint16_t protocolNumber)
+{
+  NS_LOG_FUNCTION (packet << dest << protocolNumber);
+  Address address = GetAddress();
+  NS_LOG_UNCOND(address);
+  NS_LOG_UNCOND(dest);
+
+  return SendFrom (packet, address, dest, protocolNumber);
+}
 
 } // namespace ns3

@@ -194,6 +194,8 @@ def build(bld):
         'model/icmpv4-conntrack-l4-protocol.cc',
         'model/ipv4-nat.cc',
         'helper/ipv4-nat-helper.cc',
+        'model/mac-packet-tag.cc',         ## Self Added
+
       ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -308,6 +310,8 @@ def build(bld):
         'model/sgi-hashmap.h',
         'model/ipv4-nat.h',
         'helper/ipv4-nat-helper.h',
+        'model/mac-packet-tag.h',         ## Self Added
+        
 # 'model/ipv6-address-generator.h',
        ]
 

@@ -33,6 +33,9 @@
 #include "csma-net-device.h"
 #include "csma-channel.h"
 
+#include "ns3/mac-packet-tag.h"
+#include "ns3/ipv4.h"
+
 NS_LOG_COMPONENT_DEFINE ("CsmaNetDevice");
 
 namespace ns3 {
@@ -281,6 +284,22 @@ CsmaNetDevice::AddHeader (Ptr<Packet> p,   Mac48Address source,  Mac48Address de
   EthernetHeader header (false);
   header.SetSource (source);
   header.SetDestination (dest);
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  MacTag tag;
+  tag.SetSimpleValue (0x01);
+  tag.SetSrcMac (source);
+  tag.SetDstMac (dest);
+  // store the tag in the packet.
+  p->RemoveAllPacketTags ();
+  p->AddPacketTag (tag); 
+
+  // NS_LOG_UNCOND("Packet tag set: src=" << tag.GetSrcMac() << " dest=" << dest);
+  
+  NS_LOG_UNCOND("------------------------------------------------------------------");
+  // p->PrintPacketTags (std::cout);
+  // std::cout << std::endl;
+  
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   EthernetTrailer trailer;
 
@@ -709,6 +728,30 @@ CsmaNetDevice::Receive (Ptr<Packet> packet, Ptr<CsmaNetDevice> senderDevice)
     }
 
   EthernetHeader header (false);
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // create a tag.
+  // MacTag tag;
+  // tag.SetSimpleValue (0x65);
+
+  // // store the tag in a packet.
+  // packet->AddPacketTag (tag);
+
+  // // create a copy of the packet
+  // Ptr<Packet> aCopy = packet->Copy ();
+
+  // // read the tag from the packet copy
+  // MacTag tagCopy;
+  // aCopy->PeekPacketTag (tagCopy);
+
+  // the copy and the original are the same !
+  // NS_ASSERT (tagCopy.GetSimpleValue () == tag.GetSimpleValue ());
+
+  // aCopy->PrintPacketTags (std::cout);
+  // std::cout << std::endl;
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
   packet->RemoveHeader (header);
 
   NS_LOG_LOGIC ("Pkt source is " << header.GetSource ());
@@ -907,6 +950,29 @@ bool
 CsmaNetDevice::Send (Ptr<Packet> packet,const Address& dest, uint16_t protocolNumber)
 {
   NS_LOG_FUNCTION (packet << dest << protocolNumber);
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // create a tag.
+  // MacTag tag;
+  // tag.SetSimpleValue (0x56);
+
+  // // store the tag in a packet.
+  // packet->AddPacketTag (tag);
+
+  // // create a copy of the packet
+  // Ptr<Packet> aCopy = packet->Copy ();
+
+  // read the tag from the packet copy
+  // MacTag tagCopy;
+  // packet->PeekPacketTag (tagCopy);
+
+  // // the copy and the original are the same !
+  // // NS_ASSERT (tagCopy.GetSimpleValue () == tag.GetSimpleValue ());
+  // NS_LOG_UNCOND("Packet tag read:");
+
+  // packet->PrintPacketTags (std::cout);
+  // std::cout << std::endl;
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   return SendFrom (packet, m_address, dest, protocolNumber);
 }
 
