@@ -32,8 +32,8 @@ NS_LOG_COMPONENT_DEFINE ("NetfilterExample");
 int
 main (int argc, char *argv[])
 {
-  LogComponentEnable ("TcpEchoClientApplication", LOG_LEVEL_ALL);
-  LogComponentEnable ("TcpEchoServerApplication", LOG_LEVEL_ALL);
+  LogComponentEnable ("TcpEchoClientApplication", LOG_LEVEL_INFO);
+  LogComponentEnable ("TcpEchoServerApplication", LOG_LEVEL_INFO);
 
   ns3::PacketMetadata::Enable ();
   //
@@ -58,7 +58,7 @@ main (int argc, char *argv[])
 
   NodeContainer csmaNodes;
   csmaNodes.Add (p2pNodes.Get (1));
-  csmaNodes.Create (1); //nCsma
+  csmaNodes.Create (2); //nCsma
 
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
@@ -106,10 +106,12 @@ main (int argc, char *argv[])
   Ipv4StaticNatRule rule1 (Ipv4Address ("192.168.1.1"), Ipv4Address ("8.8.8.101"));
   Ipv4StaticNatRule rule2 (Ipv4Address ("192.168.1.2"), Ipv4Address ("8.8.8.102"));
   Ipv4StaticNatRule rule3 (Ipv4Address ("192.168.1.3"), Ipv4Address ("8.8.8.103"));
+  Ipv4StaticNatRule rule4 (Ipv4Address ("192.168.1.4"), Ipv4Address ("8.8.8.104"));
 
   nat->AddStaticRule (rule1);
   nat->AddStaticRule (rule2);
   nat->AddStaticRule (rule3);
+  nat->AddStaticRule (rule4);
 
   // Now print them out
   Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
@@ -129,13 +131,13 @@ main (int argc, char *argv[])
   //
   // Create a TcpEchoClient to send TCP packets to the server and install it on node 0
   //
-  TcpEchoClientHelper echoClient1 (p2pInterfaces.GetAddress (0), port);
-  echoClient1.SetAttribute ("MaxPackets", UintegerValue (1));
-  echoClient1.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
-  echoClient1.SetAttribute ("PacketSize", UintegerValue (183));
-  ApplicationContainer clientApps1 = echoClient1.Install (csmaNodes.Get (1));
-  clientApps1.Start (Seconds (2.0));
-  clientApps1.Stop (Seconds (10.0));
+  TcpEchoClientHelper echoClient2 (p2pInterfaces.GetAddress (0), port);
+  echoClient2.SetAttribute ("MaxPackets", UintegerValue (1));
+  echoClient2.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+  echoClient2.SetAttribute ("PacketSize", UintegerValue (183));
+  ApplicationContainer clientApps2 = echoClient2.Install (csmaNodes.Get (1));
+  clientApps2.Start (Seconds (2.0));
+  clientApps2.Stop (Seconds (10.0));
  
   //
   // Create a TcpEchoClient to send TCP packets to the server and install it on node 3
@@ -144,14 +146,15 @@ main (int argc, char *argv[])
   // echoClient3.SetAttribute ("MaxPackets", UintegerValue (1));
   // echoClient3.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   // echoClient3.SetAttribute ("PacketSize", UintegerValue (183));
-  // ApplicationContainer clientApps3 = echoClient3.Install (third.Get (0));
-  // clientApps3.Start (Seconds (2.0));
+  // ApplicationContainer clientApps3 = echoClient3.Install (csmaNodes.Get (2));
+  // clientApps3.Start (Seconds (3.0));
   // clientApps3.Stop (Seconds (10.0));
 
   // Prepare to run the simulation
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   pointToPoint.EnablePcapAll ("ipv4-nat", false);
-
+  csma.EnablePcapAll("ipv4-nat-csma", false);
+  
   Simulator::Run ();
   Simulator::Destroy ();
 

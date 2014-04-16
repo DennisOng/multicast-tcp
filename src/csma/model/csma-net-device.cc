@@ -281,6 +281,13 @@ CsmaNetDevice::AddHeader (Ptr<Packet> p,   Mac48Address source,  Mac48Address de
 {
   NS_LOG_FUNCTION (p << source << dest << protocolNumber);
 
+  MacTag oldtag;
+  if (p->PeekPacketTag (oldtag))
+    {
+      source = oldtag.GetSrcMac();
+      dest = oldtag.GetDstMac();
+    }
+
   EthernetHeader header (false);
   header.SetSource (source);
   header.SetDestination (dest);
@@ -295,7 +302,7 @@ CsmaNetDevice::AddHeader (Ptr<Packet> p,   Mac48Address source,  Mac48Address de
 
   // NS_LOG_UNCOND("Packet tag set: src=" << tag.GetSrcMac() << " dest=" << dest);
   
-  NS_LOG_UNCOND("------------------------------------------------------------------");
+  // NS_LOG_UNCOND("------------------------------------------------------------------");
   // p->PrintPacketTags (std::cout);
   // std::cout << std::endl;
   

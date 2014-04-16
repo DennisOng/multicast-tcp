@@ -373,15 +373,12 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
               // p->PeekPacketTag (tagCopy);
               // NS_LOG_UNCOND("Decode tags");
               NS_LOG_UNCOND("NAT Incoming:");
-              p->PrintPacketTags (std::cout);
-              std::cout << std::endl;
-
-              NS_LOG_UNCOND("src" << ipHeader.GetSource());
-              NS_LOG_UNCOND("dst" << ipHeader.GetDestination());
-
-              // MacTag tag;
-              // p->PeekPacketTag (tag);
-              // NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
+              // p->PrintPacketTags (std::cout);
+              // std::cout << std::endl;
+              MacTag tag;
+              p->PeekPacketTag (tag);
+              NS_LOG_UNCOND("[MAC_src=" << tag.GetSrcMac() << " MAC_dest=" << tag.GetDstMac() 
+                            << "] (IP_src=" << ipHeader.GetSource() << " IP_dst=" << ipHeader.GetDestination() <<")");
               // if (tag.GetSrcMac() == Mac48Address ("00:00:00:00:00:04"))
               //   {
               //     NS_LOG_UNCOND("IN HERE!");
@@ -390,9 +387,11 @@ Ipv4Nat::DoNatPreRouting (Hooks_t hookNumber, Ptr<Packet> p,
               //     isIpHeaderModified = true;
               //   }
 
-              if (ipHeader.GetDestination().IsEqual(Ipv4Address ("8.8.8.103")))
-                ipHeader.SetDestination(Ipv4Address ("192.168.1.2"));
-              isIpHeaderModified = true;
+              if (ipHeader.GetDestination().IsEqual(Ipv4Address ("8.8.8.104")))
+                {
+                  ipHeader.SetDestination(Ipv4Address ("192.168.1.2"));
+                  isIpHeaderModified = true;
+                }
               // MacTag tag;
               // p->PeekPacketTag (tag);
               // NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
@@ -527,6 +526,7 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
               NS_LOG_DEBUG ("Rule match with a non-port-specific rule");
 
               bool isIpHeaderModified = false;
+
               // ---------------------------
               // My Modifications:
               // ---------------------------
@@ -541,21 +541,65 @@ Ipv4Nat::DoNatPostRouting (Hooks_t hookNumber, Ptr<Packet> p,
               // p->PeekPacketTag (tagCopy);
               // p->PrintPacketTags (std::cout);
               NS_LOG_UNCOND("NAT Outgoing:");
-              p->PrintPacketTags (std::cout);
-              std::cout << std::endl;
-              
-              NS_LOG_UNCOND("src" << ipHeader.GetSource());
-              NS_LOG_UNCOND("dst" << ipHeader.GetDestination());
-
               MacTag tag;
               p->PeekPacketTag (tag);
-              NS_LOG_UNCOND("NAT rcv packet tag: src=" << tag.GetSrcMac() << " dest=" << tag.GetDstMac());
+              NS_LOG_UNCOND("[MAC_src=" << tag.GetSrcMac() << " MAC_dest=" << tag.GetDstMac() 
+                            << "] (IP_src=" << ipHeader.GetSource() << " IP_dst=" << ipHeader.GetDestination() <<")");
+
+              // If the packet is from the first client (ie: nCSMA 1)
               if (tag.GetSrcMac() == Mac48Address ("00:00:00:00:00:04"))
                 {
-                  NS_LOG_UNCOND("IN HERE!");
                   NS_ASSERT(ipHeader.GetSource().IsEqual(Ipv4Address ("192.168.1.2")));
-                  ipHeader.SetSource(Ipv4Address ("8.8.8.103"));
+                  ipHeader.SetSource(Ipv4Address ("8.8.8.104"));
                   isIpHeaderModified = true;
+
+                  if (ipHeader.GetProtocol () == IPPROTO_TCP)
+                    {
+                      TcpHeader tcpHeader;
+                      p->RemoveHeader (tcpHeader);
+                      NS_LOG_INFO("Start of translator functions");
+                      NS_LOG_INFO("SEQ: " << tcpHeader.GetSequenceNumber());
+                      NS_LOG_INFO("ACK: " << tcpHeader.GetAckNumber());
+
+
+                      // Translator intercepts SYN and replies (SYN ACK) on behalf of video server
+                      if (tcpHeader.GetFlags() & TcpHeader::SYN)
+                        {
+                          isIpHeaderModified = true;
+                          NS_LOG_INFO("SYN flag detected from client 1 [MAC_src=00:00:00:00:00:04], generating ACK");
+                          tcpHeader.SetFlags(tcpHeader.GetFlags() | TcpHeader::ACK);
+                          tcpHeader.SetAckNumber(tcpHeader.GetSequenceNumber() + SequenceNumber32 (1));
+                          tcpHeader.SetSourcePort(7);
+                          tcpHeader.SetDestinationPort(49153);
+                          ipHeader.SetDestination(Ipv4Address ("192.168.1.2"));
+                          ipHeader.SetSource(Ipv4Address ("8.8.8.1"));
+
+                          MacTag oldtag;
+                          p->PeekPacketTag (oldtag);
+                          // NS_LOG_UNCOND("[MAC_src=" << oldtag.GetSrcMac() << " MAC_dest=" << oldtag.GetDstMac() 
+                            // << "] (IP_src=" << ipHeader.GetSource() << " IP_dst=" << ipHeader.GetDestination() <<")");
+                        
+                          MacTag tag;
+                          tag.SetSimpleValue (0x02);
+                          tag.SetSrcMac (oldtag.GetDstMac());
+                          tag.SetDstMac (oldtag.GetSrcMac());
+                          // store the tag in the packet.
+                          p->RemoveAllPacketTags ();
+                          p->AddPacketTag (tag); 
+
+
+                          // NEED TO SWAP SOURCe AND DEST MAC
+                          // NEED TO CHECK THAT THIS PACKET GOES OUT OF THE CSMA INTERFACE
+                        }
+                      else
+                        {
+                          // Temporary solution for dropping packet - Send to Nowhere
+                          // ipHeader.SetDestination(Ipv4Address ("10.10.10.10"));
+                          // tcpHeader.SetDestinationPort(999);
+                        }
+                    
+                      p->AddHeader (tcpHeader);
+                    }
                 }
               
 
